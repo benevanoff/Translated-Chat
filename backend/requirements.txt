@@ -3,3 +3,6 @@ transformers
 uvicorn
 fastapi
 sentencepiece
+pymysql
+starlette-session
+cryptography
