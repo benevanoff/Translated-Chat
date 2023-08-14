@@ -4,11 +4,11 @@ import websockets
 import pymysql
 import time
 from uuid import uuid4
+import os
 from multiprocessing import Process, Manager
 
 async def echo(websocket, path, messages_dict):
     print("starting server")
-    await asyncio.sleep(2)
     try:
         # add this client to the dict of messages
         client_id = str(uuid4())
@@ -33,7 +33,7 @@ def poll_db(messages_dict):
     sql_conn = pymysql.connect(
         host='localhost',
         user='root',
-        password=os.environ.get("DB_PASSWORD"),
+        password="M!lf0rd52",
         database='translated_chat',
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=True
@@ -60,12 +60,12 @@ def poll_db(messages_dict):
             time.sleep(2)
 
 if __name__ == "__main__":
-    if os.environ.get("DB_PASSWORD") == None:
-        print("!!!")
-        quit()
+    #if os.environ.get("DB_PASSWORD") == None:
+    #    print("!!!")
+    #    quit()
 
     with Manager() as manager:
-        messages_dict = manager.dict()
+        messages_dict = manager.dict({})
         db_poller = Process(target=poll_db, args=(messages_dict,))
         db_poller.start()
         asyncio.run(main(messages_dict))

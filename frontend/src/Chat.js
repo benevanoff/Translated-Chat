@@ -7,7 +7,7 @@ function Chat(props) {
     const [inputValue, setInputValue] = useState('');
 
     const inputRef = useRef(null);
-    const languageRef = useRef(null);
+    const [languageState, setLanguage] = useState(null);
     const [senderState, setSender] = useState(null); // this shouldnt change after first load but use state to force re-render
     const [messagesState, setMessages] = useState([]);
 
@@ -17,29 +17,9 @@ function Chat(props) {
 
     const http_host = process.env.REACT_APP_BACKEND_HOST;
 
-    async function fetchUser() {
-      try {
-        const response = await fetch('http://'+http_host+'/user_info', {
-          method: 'GET',
-          credentials: 'include'
-        });
-        const jsonData = await response.json();
-        if (jsonData.success !== true)
-          navigate("/login");
-        console.log(jsonData);
-        languageRef.current = jsonData.language;
-        setSender(jsonData.username);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
     const handleInputChange = async (e) => {
         setInputValue(e.target.value);
     };
-
-    if (languageRef.current === null)
-      fetchUser();
 
     const submitChat = async (e) => {
       e.preventDefault();
@@ -52,7 +32,7 @@ function Chat(props) {
       setMessages(tmp);
       // now POST new message to backend
       let url = "http://"+http_host+"/submit_chat";
-      let payload = {"recipient": recipient, "language": languageRef.current, "message": inputValue};
+      let payload = {"recipient": recipient, "language": languageState, "message": inputValue};
       console.log(payload);
       try {
         const response = await fetch(url, {
@@ -71,29 +51,54 @@ function Chat(props) {
       }
     };
 
-    useEffect( () => {
-      const fetch_history = async () => {
-      try {
-        const response = await fetch('http://'+process.env.REACT_APP_BACKEND_HOST+'/fetch_history', {
-          method: 'GET',
-          credentials: 'include'
-        });
-        const jsonData = await response.json();
-        console.log(jsonData.history);
-        setMessages(jsonData.history);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
+    useEffect(() => {
+      const fetchUser = async () => {
+        try {
+          const response = await fetch('http://' + http_host + '/user_info', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          const jsonData = await response.json();
+          if (jsonData.success !== true) navigate('/login');
+          console.log(jsonData);
+          setLanguage(jsonData.language);
+          setSender(jsonData.username);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
       };
-      fetch_history();
+    
+      fetchUser();
+    }, []);
+    
+    useEffect(() => {
+      const fetch_history = async () => {
+        try {
+          const response = await fetch('http://127.0.0.1:8000/fetch_history?lang=' + languageState, {
+            method: 'GET',
+            credentials: 'include',
+          });
+          const jsonData = await response.json();
+          console.log(jsonData.history);
+          setMessages(jsonData.history);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      };
+    
+      if (languageState !== null) {
+        fetch_history();
+      }
+
       const ws = new WebSocket('ws://127.0.0.1:8080');
       ws.onopen = () => {
         console.log('Connected to WebSocket');
       };
       ws.onmessage = (event) => {
-        fetch_history();
+        if (languageState !== null)
+          fetch_history();
       };
-    }, []);
+    }, [languageState]);
 
     const render_chat_text = () => {
       return messagesState.map((msg, index) => (

@@ -8,7 +8,7 @@ from translator import Translator
 from starlette.middleware.sessions import SessionMiddleware
 import pymysql
 
-if os.environ.get("DB_PASSWORD") == None:
+if os.environ.get("DB_PASSWORD") == None or os.environ.get("DB_HOST") == None:
     print("!!!")
     quit()
 
@@ -40,8 +40,7 @@ app.add_middleware(
 )
 app.add_middleware(SessionMiddleware, secret_key="some-secret-key")
 
-#eng_to_spa = Translator("eng")
-spa_to_eng = Translator("spa")
+translator = Translator()
 
 @app.get("/")
 def read_root():
@@ -57,7 +56,7 @@ async def login(login_request:LoginRequest, request: Request):
     # first fetch the password from db to see if they match
     try:
         with sql_conn.cursor() as cursor:
-            cursor.execute(f'SELECT password, native_language FROM users WHERE username = "{login_request.username}"') # NOT SAFE !!!
+            cursor.execute('SELECT password, native_language FROM users WHERE username = %s', (login_request.username))
             results = cursor.fetchall()
             assert len(results) == 1
         if results[0]['password'] == login_request.password:
@@ -83,13 +82,13 @@ def get_user_info(request: Request):
 class WordsRequest(BaseModel):
     words: str
 
-#@app.post("/eng_to_spa")
-#def translate_english_to_spanish(request: Request, words_request: WordsRequest):
-#    return eng_to_spa.translate(words_request.words)
+@app.post("/eng_to_spa")
+def translate_english_to_spanish(request: Request, words_request: WordsRequest):
+    return translator.translate("spa", words_request.words)
 
 @app.post("/spa_to_eng")
 def translate_spanish_to_english(request: Request, words_request: WordsRequest):
-    return spa_to_eng.translate(words_request.words)
+    return translator.translate("eng", words_request.words)
 
 
 class ChatRequest(BaseModel):
@@ -100,12 +99,13 @@ class ChatRequest(BaseModel):
 @app.post("/submit_chat")
 def submit_chat(request: Request, chat_request: ChatRequest):
     sender = request.session.get("username")
+    print("sc", sender, chat_request.language)
     if sender is None or chat_request.message == None or chat_request.message == "":
         return {"success": False}
-    if chat_request.language.lower() != "english":
-        translated_message = spa_to_eng.translate(chat_request.message)
+    if chat_request.language.lower() == "english":
+        translated_message = translator.translate("spa", chat_request.message)
     else:
-        translated_message = chat_request.message
+        translated_message = translator.translate("eng", chat_request.message)
     with sql_conn.cursor() as cur:
         query = """
             INSERT INTO chats
@@ -118,26 +118,29 @@ def submit_chat(request: Request, chat_request: ChatRequest):
     return {"success": True}
 
 @app.get("/fetch_history")
-def fetch_history(request: Request):
+def fetch_history(lang:str, request: Request):
     username = request.session.get("username")
     if username is None:
         return {"success": False}
+    print("lang", lang, username)
     with sql_conn.cursor() as cur:
         query = """
-            SELECT translated_message, original_message, sender
-            FROM chats
+            SELECT chats.translated_message, chats.original_message, chats.sender, users.native_language
+            FROM chats LEFT JOIN users ON chats.sender=users.username
             WHERE recipient = %s OR sender = %s
             ORDER BY timestamp DESC
             LIMIT 5
         """
         cur.execute(query, (username, username))
         results = cur.fetchall()
+        print(results)
         msgs = []
         for msg in results:
-            if msg['sender'] == username:
+            if msg['native_language'] == lang:
                 msgs.append({"message":msg['original_message'], "sender":msg['sender']})
             else:
                 msgs.append({"message":msg['translated_message'], "sender":msg['sender']})
+        print(msgs)
     return {"success": True, "history": msgs}
 
 @app.get("/contacts")
