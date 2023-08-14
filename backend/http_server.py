@@ -8,12 +8,17 @@ from translator import Translator
 from starlette.middleware.sessions import SessionMiddleware
 import pymysql
 
+if os.environ.get("DB_PASSWORD") == None:
+    print("!!!")
+    quit()
+
 sql_conn = pymysql.connect(
     host='localhost',
     user='root',
-    password='', # !!! MOVE TO ENV VAR
+    password=os.environ.get("DB_PASSWORD"),
     database='translated_chat',
-    cursorclass=pymysql.cursors.DictCursor
+    cursorclass=pymysql.cursors.DictCursor,
+    autocommit=True
 )
 
 app = FastAPI()
@@ -130,7 +135,22 @@ def fetch_history(request: Request):
         msgs = []
         for msg in results:
             if msg['sender'] == username:
-                msgs.append(msg['original_message'])
+                msgs.append({"message":msg['original_message'], "sender":msg['sender']})
             else:
-                msgs.append(msg['translated_message'])
+                msgs.append({"message":msg['translated_message'], "sender":msg['sender']})
     return {"success": True, "history": msgs}
+
+@app.get("/contacts")
+def fetch_contacts(request: Request):
+    username = request.session.get("username")
+    if username is None:
+        return {"success": False}
+    with sql_conn.cursor() as cur:
+        query = """
+            SELECT contact_username
+            FROM contacts
+            WHERE contact_holder = %s
+        """
+        cur.execute(query, (username))
+        results = cur.fetchall()
+    return {"success": True, "contacts": [x['contact_username'] for x in results]}

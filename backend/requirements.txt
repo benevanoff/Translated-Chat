@@ -6,3 +6,4 @@ sentencepiece
 pymysql
 starlette-session
 cryptography
+websockets

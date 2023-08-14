@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect} from 'react';
 import { useNavigate, useParams} from 'react-router-dom';
 
+import './Chat.css'
+
 function Chat(props) {
     const [inputValue, setInputValue] = useState('');
 
     const inputRef = useRef(null);
     const languageRef = useRef(null);
-    const refreshHistoryRef = useRef(0);
+    const [senderState, setSender] = useState(null); // this shouldnt change after first load but use state to force re-render
     const [messagesState, setMessages] = useState([]);
 
     const navigate = useNavigate();
@@ -24,6 +26,7 @@ function Chat(props) {
           navigate("/login");
         console.log(jsonData);
         languageRef.current = jsonData.language;
+        setSender(jsonData.username);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -36,9 +39,16 @@ function Chat(props) {
     if (languageRef.current === null)
       fetchUser();
 
-    const translate = async (e) => {
+    const submitChat = async (e) => {
       e.preventDefault();
       console.log(inputValue);
+      // adjust messages on screen
+      let tmp = messagesState;
+      tmp.shift();
+      tmp.push({message: inputValue, sender: senderState});
+      console.log(tmp);
+      setMessages(tmp);
+      // now POST new message to backend
       let url = "http://127.0.0.1:8000/submit_chat";
       let payload = {"recipient": recipient, "language": languageRef.current, "message": inputValue};
       console.log(payload);
@@ -60,7 +70,6 @@ function Chat(props) {
     };
 
     useEffect( () => {
-      // TODO: replace polling with websockets
       const fetch_history = async () => {
       try {
         const response = await fetch('http://127.0.0.1:8000/fetch_history', {
@@ -75,14 +84,19 @@ function Chat(props) {
       }
       };
       fetch_history();
-      let interval = setInterval(fetch_history, 5000);
-      return () => clearInterval(interval);
+      const ws = new WebSocket('ws://127.0.0.1:8080');
+      ws.onopen = () => {
+        console.log('Connected to WebSocket');
+      };
+      ws.onmessage = (event) => {
+        fetch_history();
+      };
     }, []);
 
     const render_chat_text = () => {
       return messagesState.map((msg, index) => (
-        <div key={index} className="word-bubble">
-            <p>{msg}</p>
+        <div key={index}>
+            <span className={msg.sender === senderState ? "chat-bubble-sender": "chat-bubble-recv"}>{msg.message}</span>
         </div>
       ));
     };
@@ -104,7 +118,7 @@ function Chat(props) {
         />
       </center>
       <center>
-        <button onClick={translate}>Send</button>
+        <button onClick={submitChat}>Send</button>
       </center>
     </div>
     );

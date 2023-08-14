@@ -3,14 +3,16 @@ import './App.css';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Chat from './Chat.js'
 import Login from './Login.js';
-import Navbar from './Navbar';
+import Contacts from './Contacts';
 
 const App = () => {
   return (
     <Router>
         <Routes>
-          <Route path="/chat/:recipient" element={<Chat/>} />
+          <Route path="/" element={<Login/>} />
           <Route path="/login" element={<Login/>} />
+          <Route path="/contacts" element={<Contacts/>} />
+          <Route path="/chat/:recipient" element={<Chat/>} />
         </Routes>
     </Router>
   );

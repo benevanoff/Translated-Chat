@@ -16,7 +16,7 @@ const Login = () => {
         });
         const responseData = await response.json();
         if (responseData.success) {
-            navigate('/chat');
+            navigate('/contacts');
         }
         console.log('Response:', responseData);
         } catch (error) {
