@@ -69,12 +69,12 @@ function Chat(props) {
       };
     
       fetchUser();
-    }, []);
+    }, [http_host]);
     
     useEffect(() => {
       const fetch_history = async () => {
         try {
-          const response = await fetch('http://127.0.0.1:8000/fetch_history?lang=' + languageState, {
+          const response = await fetch('http://'+http_host+'/fetch_history?lang=' + languageState, {
             method: 'GET',
             credentials: 'include',
           });
@@ -98,7 +98,7 @@ function Chat(props) {
         if (languageState !== null)
           fetch_history();
       };
-    }, [languageState]);
+    }, [languageState, http_host]);
 
     const render_chat_text = () => {
       return messagesState.map((msg, index) => (
