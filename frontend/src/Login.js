@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
     const navigate = useNavigate();
 
+    const http_host = process.env.BACKEND_HOST;
+
     const requestLogin = async (username) => {
         try {
-        const response = await fetch("http://127.0.0.1:8000/login", {
+        const response = await fetch("http://"+http_host+"/login", {
             method: 'POST',
             credentials: 'include',
             headers: {

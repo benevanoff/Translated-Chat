@@ -19,8 +19,9 @@ const Contacts = () => {
 
     useEffect(() => {
       const fetchContacts = async () =>  {
+        const http_host = process.env.BACKEND_HOST;
         try {
-          const response = await fetch('http://127.0.0.1:8000/contacts', {
+          const response = await fetch('http://'+http_host+'/contacts', {
             method: 'GET',
             credentials: 'include'
           });

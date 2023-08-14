@@ -15,9 +15,11 @@ function Chat(props) {
 
     const {recipient} = useParams();
 
+    const http_host = process.env.BACKEND_HOST;
+
     async function fetchUser() {
       try {
-        const response = await fetch('http://127.0.0.1:8000/user_info', {
+        const response = await fetch('http://'+http_host+'/user_info', {
           method: 'GET',
           credentials: 'include'
         });
@@ -49,7 +51,7 @@ function Chat(props) {
       console.log(tmp);
       setMessages(tmp);
       // now POST new message to backend
-      let url = "http://127.0.0.1:8000/submit_chat";
+      let url = "http://"+http_host+"/submit_chat";
       let payload = {"recipient": recipient, "language": languageRef.current, "message": inputValue};
       console.log(payload);
       try {
@@ -72,7 +74,7 @@ function Chat(props) {
     useEffect( () => {
       const fetch_history = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/fetch_history', {
+        const response = await fetch('http://'+process.env.BACKEND_HOST+'/fetch_history', {
           method: 'GET',
           credentials: 'include'
         });

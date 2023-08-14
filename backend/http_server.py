@@ -13,7 +13,7 @@ if os.environ.get("DB_PASSWORD") == None:
     quit()
 
 sql_conn = pymysql.connect(
-    host='localhost',
+    host=os.environ['DB_HOST'],
     user='root',
     password=os.environ.get("DB_PASSWORD"),
     database='translated_chat',
