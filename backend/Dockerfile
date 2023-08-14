@@ -14,9 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code into the container
 COPY . .
 
-# setup SQL database
-COPY schema.sql /docker-entrypoint-initdb.d/
-
 # Expose the port that the FastAPI server will run on
 EXPOSE 8000
 
