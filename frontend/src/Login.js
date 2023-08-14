@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
     const navigate = useNavigate();
 
-    const http_host = process.env.BACKEND_HOST;
+    const http_host = process.env.REACT_APP_BACKEND_HOST;
 
     const requestLogin = async (username) => {
         try {

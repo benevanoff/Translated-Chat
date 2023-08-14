@@ -15,7 +15,7 @@ function Chat(props) {
 
     const {recipient} = useParams();
 
-    const http_host = process.env.BACKEND_HOST;
+    const http_host = process.env.REACT_APP_BACKEND_HOST;
 
     async function fetchUser() {
       try {
@@ -74,7 +74,7 @@ function Chat(props) {
     useEffect( () => {
       const fetch_history = async () => {
       try {
-        const response = await fetch('http://'+process.env.BACKEND_HOST+'/fetch_history', {
+        const response = await fetch('http://'+process.env.REACT_APP_BACKEND_HOST+'/fetch_history', {
           method: 'GET',
           credentials: 'include'
         });

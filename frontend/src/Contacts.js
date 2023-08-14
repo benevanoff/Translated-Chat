@@ -19,7 +19,7 @@ const Contacts = () => {
 
     useEffect(() => {
       const fetchContacts = async () =>  {
-        const http_host = process.env.BACKEND_HOST;
+        const http_host = process.env.REACT_APP_BACKEND_HOST;
         try {
           const response = await fetch('http://'+http_host+'/contacts', {
             method: 'GET',
