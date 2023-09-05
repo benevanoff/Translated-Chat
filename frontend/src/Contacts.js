@@ -13,7 +13,7 @@ const Contacts = () => {
 
     const renderContacts = () => {
       return contacts.map((name, index) => (
-        <span className='chat-bubble' name='idk' onClick={handleContactClick}>{name}</span>
+        <div><span className='chat-bubble' name='idk' onClick={handleContactClick}>{name}</span></div>
       ));
     };
 
@@ -40,6 +40,9 @@ const Contacts = () => {
     return (
         <center>
             <h2>Contacts</h2>
+            <div>
+              <span className='chat-bubble' name='idk' onClick={handleContactClick}>Ai</span>
+            </div>
             {renderContacts()}
         </center>
     );

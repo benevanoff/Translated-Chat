@@ -7,6 +7,9 @@ WORKDIR /app
 # Set Environment variables
 ENV HOST_IP=146.190.141.184
 
+# Install supervisord
+RUN apt-get update && apt-get install -y supervisor
+
 # Copy the requirements file and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -14,8 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code into the container
 COPY . .
 
+# Copy supervisord config
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 # Expose the port that the FastAPI server will run on
 EXPOSE 8000
 
-# Start the FastAPI server
-CMD ["uvicorn", "http_server:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start http and websocker servers via supervisord
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

@@ -5,18 +5,20 @@ from pydantic import BaseModel
 from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
 from translator import Translator
+from chatbot import Chatbot
 from starlette.middleware.sessions import SessionMiddleware
 import pymysql
+
 
 if os.environ.get("DB_PASSWORD") == None or os.environ.get("DB_HOST") == None:
     print("!!!")
     quit()
 
 sql_conn = pymysql.connect(
-    host=os.environ['DB_HOST'],
-    user='root',
-    password=os.environ.get("DB_PASSWORD"),
-    database='translated_chat',
+    host=os.environ.get('DB_HOST', 'localhost'),
+    user=os.environ.get('DB_USER', 'localhost'),
+    password=os.environ.get("DB_PASSWORD", "yourpassword"),
+    database=os.environ.get('DB_NAME', 'translated_chat'),
     cursorclass=pymysql.cursors.DictCursor,
     autocommit=True
 )
@@ -41,6 +43,7 @@ app.add_middleware(
 app.add_middleware(SessionMiddleware, secret_key="some-secret-key")
 
 translator = Translator()
+chatbot = Chatbot()
 
 @app.get("/")
 def read_root():
@@ -117,21 +120,35 @@ def submit_chat(request: Request, chat_request: ChatRequest):
         sql_conn.commit()
     return {"success": True}
 
-@app.get("/fetch_history")
-def fetch_history(lang:str, request: Request):
-    username = request.session.get("username")
-    if username is None:
+class AiChatRequest(BaseModel):
+    context: str
+    message: str
+
+@app.post("/submit_chat_ai")
+def submit_chat_ai(request: Request, chat_request: AiChatRequest):
+    sender = request.session.get("username")
+    print("sc", sender, chat_request.message)
+    if sender is None or chat_request.message == None or chat_request.message == "":
         return {"success": False}
-    print("lang", lang, username)
+
+    bot_response = chatbot.generate(chat_request.context, chat_request.message)
+    return {"success": True, "response": bot_response}
+
+@app.get("/fetch_history")
+def fetch_history(recipient:str, lang:str, request: Request):
+    username = request.session.get("username")
+    if username is None or recipient is None:
+        return {"success": False}
+    print(lang, username, recipient)
     with sql_conn.cursor() as cur:
         query = """
             SELECT chats.translated_message, chats.original_message, chats.sender, users.native_language
             FROM chats LEFT JOIN users ON chats.sender=users.username
-            WHERE recipient = %s OR sender = %s
+            WHERE (recipient = %s AND sender = %s) OR (recipient = %s AND sender = %s)
             ORDER BY timestamp DESC
             LIMIT 5
         """
-        cur.execute(query, (username, username))
+        cur.execute(query, (recipient, username, username, recipient))
         results = cur.fetchall()
         print(results)
         msgs = []

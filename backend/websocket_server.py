@@ -31,10 +31,10 @@ async def main(messages_dict):
 
 def poll_db(messages_dict):
     sql_conn = pymysql.connect(
-        host='localhost',
-        user='root',
-        password="M!lf0rd52",
-        database='translated_chat',
+        host=os.environ.get('DB_HOST', 'localhost'),
+        user=os.environ.get('DB_USER', 'root'),
+        password=os.environ.get('DB_PASSWORD', 'yourpassword'),
+        database=os.environ.get('DB_NAME', 'translated_chat'),
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=True
     )

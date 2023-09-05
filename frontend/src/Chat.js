@@ -51,6 +51,52 @@ function Chat(props) {
       }
     };
 
+    const submitChatAi = async (e) => {
+      e.preventDefault();
+      console.log(inputValue);
+      // first convert the message history to tokenized string
+      let context = "";
+      console.log("messagesState.length", messagesState.length);
+      for (let i = 0; i < messagesState.length; i++) {
+        context += (messagesState[i].message + "<|endoftext|>");
+      }
+      // adjust messages on screen
+      let tmp = messagesState;
+      tmp.shift();
+      tmp.push({message: inputValue, sender: senderState});
+      console.log(tmp);
+      setMessages(tmp);
+      // now POST new message to backend
+      let url = "http://"+http_host+"/submit_chat_ai";
+      let payload = {"context": context, "message": inputValue};
+      console.log(payload);
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        const responseData = await response.json();
+        console.log('Response:', responseData);
+        // post process response, which includes the whole history in the format message1<|endoftext|>message2<|endoftext|>
+        let message_texts = responseData.response.split("<|endoftext|>").slice(0,-1);
+        tmp = [];
+        for (let i = 0; i < message_texts.length; i++) {
+          if (i % 2 == 0) // sender and reciever switch each turn, starting with user
+            tmp.push({message: message_texts[i], sender: senderState});
+          else
+            tmp.push({message: message_texts[i], sender: "Ai"});
+        }
+        // then update message state
+        setMessages(tmp);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
     useEffect(() => {
       const fetchUser = async () => {
         try {
@@ -74,7 +120,7 @@ function Chat(props) {
     useEffect(() => {
       const fetch_history = async () => {
         try {
-          const response = await fetch('http://'+http_host+'/fetch_history?lang=' + languageState, {
+          const response = await fetch('http://'+http_host+'/fetch_history?lang='+languageState+'&recipient='+recipient, {
             method: 'GET',
             credentials: 'include',
           });
@@ -85,19 +131,21 @@ function Chat(props) {
           console.error('Error fetching data:', error);
         }
       };
-    
-      if (languageState !== null) {
-        fetch_history();
-      }
 
-      const ws = new WebSocket('ws://127.0.0.1:8080');
-      ws.onopen = () => {
-        console.log('Connected to WebSocket');
-      };
-      ws.onmessage = (event) => {
-        if (languageState !== null)
+      if (recipient != "Ai") {
+        if (languageState !== null) {
           fetch_history();
-      };
+        }
+  
+        const ws = new WebSocket('ws://127.0.0.1:8080');
+        ws.onopen = () => {
+          console.log('Connected to WebSocket');
+        };
+        ws.onmessage = (event) => {
+          if (languageState !== null)
+            fetch_history();
+        };
+      }
     }, [languageState, http_host]);
 
     const render_chat_text = () => {
@@ -108,6 +156,7 @@ function Chat(props) {
       ));
     };
 
+    let submitChatFunc = recipient != "Ai" ? submitChat : submitChatAi;
     return (
     <div style={{margin: 10}}>
       <center><h2>{recipient}</h2></center>
@@ -125,7 +174,7 @@ function Chat(props) {
         />
       </center>
       <center>
-        <button onClick={submitChat}>Send</button>
+        <button onClick={submitChatFunc}>Send</button>
       </center>
     </div>
     );
