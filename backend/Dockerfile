@@ -20,8 +20,9 @@ COPY . .
 # Copy supervisord config
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Expose the port that the FastAPI server will run on
+# Expose the port that the servers will run on
 EXPOSE 8000
+EXPOSE 8080
 
 # Start http and websocker servers via supervisord
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
