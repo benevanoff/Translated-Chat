@@ -6,12 +6,19 @@ import './Chat.css'
 function Chat(props) {
     const [inputValue, setInputValue] = useState('');
 
-    const inputRef = useRef(null);
     const [languageState, setLanguage] = useState(null);
     const [senderState, setSender] = useState(null); // this shouldnt change after first load but use state to force re-render
     const [messagesState, setMessages] = useState([]);
+    const originalMessages = useRef([]);
+    const translatedMessages = useRef([]);
 
     const navigate = useNavigate();
+
+    const [doTranslation, setTranslationSetting] = useState(true);
+
+    const handleTranslateChange = () => {
+      setTranslationSetting(!doTranslation);
+    };
 
     const {recipient} = useParams();
 
@@ -50,11 +57,14 @@ function Chat(props) {
       } catch (error) {
         console.error('Error:', error);
       }
+      setInputValue('');
     };
 
     const submitChatAi = async (e) => {
       e.preventDefault();
       console.log(inputValue);
+      console.log('messages state');
+      console.log(messagesState);
       // first convert the message history to tokenized string
       let context = "";
       console.log("messagesState.length", messagesState.length);
@@ -69,7 +79,7 @@ function Chat(props) {
       setMessages(tmp);
       // now POST new message to backend
       let url = "http://"+http_host+"/submit_chat_ai";
-      let payload = {"context": context, "message": inputValue};
+      let payload = {"context": context, "message": inputValue, "translate": doTranslation};
       console.log(payload);
       try {
         const response = await fetch(url, {
@@ -83,19 +93,32 @@ function Chat(props) {
         const responseData = await response.json();
         console.log('Response:', responseData);
         // post process response, which includes the whole history in the format message1<|endoftext|>message2<|endoftext|>
-        let message_texts = responseData.response.split("<|endoftext|>").slice(0,-1);
+        let original_texts = responseData.response.split("<|endoftext|>").slice(0,-1);
+        let translated_texts = responseData.translated.split("<|endoftext|>").slice(0,-1);
         tmp = [];
-        for (let i = 0; i < message_texts.length; i++) {
-          if (i % 2 == 0) // sender and reciever switch each turn, starting with user
-            tmp.push({message: message_texts[i], sender: senderState});
-          else
-            tmp.push({message: message_texts[i], sender: "Ai"});
+        let tmp_translated = [];
+        for (let i = 0; i < original_texts.length; i++) {
+          if (i % 2 == 0) { // sender and reciever switch each turn, starting with user
+            tmp.push({message: original_texts[i], sender: senderState});
+            tmp_translated.push({message: translated_texts[i], sender: senderState});
+          }
+          else { 
+            tmp.push({message: original_texts[i], sender: "Ai"});
+            tmp_translated.push({message: translated_texts[i], sender: "Ai"});
+          }
         }
         // then update message state
-        setMessages(tmp);
+        if (!doTranslation) {
+          setMessages(tmp);
+        } else {
+          setMessages(tmp_translated);
+        }
+        originalMessages.current = tmp;
+        translatedMessages.current = tmp_translated;
       } catch (error) {
         console.error('Error:', error);
       }
+      setInputValue('');
     };
 
     useEffect(() => {
@@ -114,20 +137,19 @@ function Chat(props) {
           console.error('Error fetching data:', error);
         }
       };
-    
       fetchUser();
     }, [http_host]);
     
     useEffect(() => {
       const fetch_history = async () => {
         try {
-          const response = await fetch('http://'+http_host+'/fetch_history?lang='+languageState+'&recipient='+recipient, {
+          const response = await fetch('http://'+http_host+'/fetch_history?lang='+languageState+'&recipient='+recipient+'&translate='+doTranslation, {
             method: 'GET',
             credentials: 'include',
           });
           const jsonData = await response.json();
           console.log(jsonData.history);
-          setMessages(jsonData.history);
+          setMessages(jsonData.history.reverse());
         } catch (error) {
           console.error('Error fetching data:', error);
         }
@@ -147,7 +169,14 @@ function Chat(props) {
             fetch_history();
         };
       }
-    }, [languageState, http_host]);
+    }, [doTranslation, languageState, http_host]);
+
+    useEffect(() => {
+      if (doTranslation)
+        setMessages(translatedMessages.current);
+      else
+        setMessages(originalMessages.current);
+    }, [doTranslation]);
 
     const render_chat_text = () => {
       return messagesState.map((msg, index) => (
@@ -160,13 +189,20 @@ function Chat(props) {
     let submitChatFunc = recipient != "Ai" ? submitChat : submitChatAi;
     return (
     <div style={{margin: 10}}>
-      <center><h2>{recipient}</h2></center>
+      <center>
+        <h2>{recipient}</h2>
+        <label>{doTranslation ? 'Translation: On ' : 'Translation: Off '}</label>
+        <input
+          type="checkbox"
+          checked={doTranslation}
+          onChange={handleTranslateChange}
+        />
+      </center>
       <div id="history">
       <center>{render_chat_text()}</center>
       </div>
       <center>
         <textarea
-            ref={inputRef}
             type="text"
             id="inputField"
             value={inputValue}

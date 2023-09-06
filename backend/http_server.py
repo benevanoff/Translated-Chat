@@ -17,6 +17,7 @@ sql_conn = pymysql.connect(
     cursorclass=pymysql.cursors.DictCursor,
     autocommit=True
 )
+sql_conn.ping(reconnect=True)
 
 app = FastAPI()
 
@@ -49,7 +50,7 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/login")
-async def login(login_request:LoginRequest, request: Request):
+def login(login_request:LoginRequest, request: Request):
     print(login_request.username)
     # first fetch the password from db to see if they match
     try:
@@ -127,14 +128,21 @@ def submit_chat_ai(request: Request, chat_request: AiChatRequest):
         return {"success": False}
 
     bot_response = chatbot.generate(chat_request.context, chat_request.message)
-    return {"success": True, "response": bot_response}
+    messages_parsed = bot_response.split("<|endoftext|>")
+    translated_messages = []
+    # translate each message
+    for message in messages_parsed[:-1]: # ignore last element which will always be empty string
+        translated_messages.append(translator.translate("spa", message))
+    # put them back into format with <|endoftext|> token
+    translated_response = "<|endoftext|>".join(translated_messages) + "<|endoftext|>"
+    return {"success": True, "response": bot_response, "translated": translated_response}
 
 @app.get("/fetch_history")
-def fetch_history(recipient:str, lang:str, request: Request):
+def fetch_history(recipient:str, lang:str, translate:bool, request: Request):
     username = request.session.get("username")
-    if username is None or recipient is None:
+    if username is None or recipient is None or lang is None:
         return {"success": False}
-    print(lang, username, recipient)
+    print(lang, username, recipient, translate)
     with sql_conn.cursor() as cur:
         query = """
             SELECT chats.translated_message, chats.original_message, chats.sender, users.native_language
@@ -148,7 +156,7 @@ def fetch_history(recipient:str, lang:str, request: Request):
         print(results)
         msgs = []
         for msg in results:
-            if msg['native_language'] == lang:
+            if msg['native_language'] == lang or not translate:
                 msgs.append({"message":msg['original_message'], "sender":msg['sender']})
             else:
                 msgs.append({"message":msg['translated_message'], "sender":msg['sender']})

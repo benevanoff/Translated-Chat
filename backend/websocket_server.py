@@ -26,7 +26,7 @@ async def echo(websocket, path, messages_dict):
         del messages_dict[client_id]
 
 async def main(messages_dict):
-    server = await serve(lambda ws, path: echo(ws, path, messages_dict), "localhost", 8080)
+    server = await serve(lambda ws, path: echo(ws, path, messages_dict), "0.0.0.0", 8080)
     await server.wait_closed()
 
 def poll_db(messages_dict):
@@ -60,7 +60,7 @@ def poll_db(messages_dict):
             time.sleep(2)
 
 if __name__ == "__main__":
-    time.sleep(120)
+    time.sleep(120) # wait to be sure the database has been setup
     print("starting websocket server")
     with Manager() as manager:
         messages_dict = manager.dict({})
