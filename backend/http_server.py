@@ -1,4 +1,4 @@
-import os
+import os, re
 from uuid import uuid4
 from fastapi import FastAPI, Request, Depends, HTTPException, Response
 from pydantic import BaseModel
@@ -41,6 +41,10 @@ app.add_middleware(SessionMiddleware, secret_key="some-secret-key")
 translator = Translator()
 chatbot = Chatbot()
 
+def sanitize(input_string):
+    sanitized_string = re.sub(r'[^a-zA-Z0-9]', '', input_string)
+    return sanitized_string
+
 @app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
@@ -55,10 +59,10 @@ def login(login_request:LoginRequest, request: Request):
     # first fetch the password from db to see if they match
     try:
         with sql_conn.cursor() as cursor:
-            cursor.execute('SELECT password, native_language FROM users WHERE username = %s', (login_request.username))
+            cursor.execute('SELECT password, native_language FROM users WHERE username = %s', (sanitize(login_request.username)))
             results = cursor.fetchall()
             assert len(results) == 1
-        if results[0]['password'] == login_request.password:
+        if results[0]['password'] == login_request.password: # TODO hash passwords
             request.session["username"] = login_request.username
             request.session["native_language"] = results[0]["native_language"]
             return {"success": True}
