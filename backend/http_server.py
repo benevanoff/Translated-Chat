@@ -57,17 +57,15 @@ class LoginRequest(BaseModel):
 def login(login_request:LoginRequest, request: Request):
     print(login_request.username)
     # first fetch the password from db to see if they match
-    try:
-        with sql_conn.cursor() as cursor:
-            cursor.execute('SELECT password, native_language FROM users WHERE username = %s', (sanitize(login_request.username)))
-            results = cursor.fetchall()
-            assert len(results) == 1
-        if results[0]['password'] == login_request.password: # TODO hash passwords
-            request.session["username"] = login_request.username
-            request.session["native_language"] = results[0]["native_language"]
-            return {"success": True}
-    except:
-        pass # TODO handle better
+    sql_conn.ping(reconnect=True) # global connection will timeout if nobody has used the app in a while
+    with sql_conn.cursor() as cursor:
+        cursor.execute('SELECT password, native_language FROM users WHERE username = %s', (sanitize(login_request.username)))
+        results = cursor.fetchall()
+        assert len(results) == 1
+    if results[0]['password'] == login_request.password: # TODO hash passwords
+        request.session["username"] = login_request.username
+        request.session["native_language"] = results[0]["native_language"]
+        return {"success": True}
     return {"success": False}
 
 @app.get("/user_info/")
