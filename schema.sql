@@ -20,8 +20,19 @@ CREATE TABLE contacts (
     contact_username VARCHAR(255) NOT NULL
 );
 
-INSERT INTO users (username, password, native_language) VALUES ('benevanoff', 'secret', 'english');
-INSERT INTO users (username, password, native_language) VALUES ('lily', 'secret', 'spanish');
+INSERT INTO users (username, password, native_language) VALUES ('benevanoff', 'secret', 'spanish');
+INSERT INTO users (username, password, native_language) VALUES ('lily', 'secret', 'english');
+
+INSERT INTO users (username, password, native_language) VALUES ('tigerwang', 'uiuc', 'english');
+INSERT INTO users (username, password, native_language) VALUES ('isaaczhang', 'uiuc', 'english');
 
 INSERT INTO contacts (contact_holder, contact_username) VALUES ('benevanoff', 'lily');
+INSERT INTO contacts (contact_holder, contact_username) VALUES ('benevanoff', 'tigerwang');
+INSERT INTO contacts (contact_holder, contact_username) VALUES ('benevanoff', 'isaaczhang');
+
 INSERT INTO contacts (contact_holder, contact_username) VALUES ('lily', 'benevanoff');
+
+INSERT INTO contacts (contact_holder, contact_username) VALUES ('tigerwang', 'benevanoff');
+INSERT INTO contacts (contact_holder, contact_username) VALUES ('tigerwang', 'isaaczhang');
+INSERT INTO contacts (contact_holder, contact_username) VALUES ('isaaczhang', 'benevanoff');
+INSERT INTO contacts (contact_holder, contact_username) VALUES ('isaaczhang', 'tigerwang');

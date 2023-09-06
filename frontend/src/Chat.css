@@ -5,6 +5,7 @@
     padding: 8px 16px;
     margin: 4px;
     text-align: center;
+    margin-left: 10%;
   }
 
   .chat-bubble-recv {
@@ -14,4 +15,5 @@
     padding: 8px 16px;
     margin: 4px;
     text-align: center;
+    margin-right: 10%;
   }

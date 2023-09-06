@@ -8,7 +8,7 @@ import os
 from multiprocessing import Process, Manager
 
 async def echo(websocket, path, messages_dict):
-    print("starting server")
+    print("starting connection")
     try:
         # add this client to the dict of messages
         client_id = str(uuid4())
@@ -47,7 +47,7 @@ def poll_db(messages_dict):
             """
             cur.execute(query)
             chats = cur.fetchall()
-            if not most_recent_known_timestamp or most_recent_known_timestamp < chats[0]['timestamp']:
+            if chats and len(chats) > 0 and (not most_recent_known_timestamp or most_recent_known_timestamp < chats[0]['timestamp']):
                 most_recent_known_timestamp = chats[0]['timestamp']
                 if messages_dict:
                     print(type(messages_dict))
@@ -60,10 +60,8 @@ def poll_db(messages_dict):
             time.sleep(2)
 
 if __name__ == "__main__":
-    #if os.environ.get("DB_PASSWORD") == None:
-    #    print("!!!")
-    #    quit()
-
+    time.sleep(120)
+    print("starting websocket server")
     with Manager() as manager:
         messages_dict = manager.dict({})
         db_poller = Process(target=poll_db, args=(messages_dict,))

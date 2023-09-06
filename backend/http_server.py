@@ -9,14 +9,9 @@ from chatbot import Chatbot
 from starlette.middleware.sessions import SessionMiddleware
 import pymysql
 
-
-if os.environ.get("DB_PASSWORD") == None or os.environ.get("DB_HOST") == None:
-    print("!!!")
-    quit()
-
 sql_conn = pymysql.connect(
-    host=os.environ.get('DB_HOST', 'localhost'),
-    user=os.environ.get('DB_USER', 'localhost'),
+    host=os.environ.get('DB_HOST', '127.0.0.1'),
+    user=os.environ.get('DB_USER', 'root'),
     password=os.environ.get("DB_PASSWORD", "yourpassword"),
     database=os.environ.get('DB_NAME', 'translated_chat'),
     cursorclass=pymysql.cursors.DictCursor,

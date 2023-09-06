@@ -16,6 +16,7 @@ function Chat(props) {
     const {recipient} = useParams();
 
     const http_host = process.env.REACT_APP_BACKEND_HOST;
+    const websocket_host = process.env.REACT_APP_WEBSOCKET_HOST;
 
     const handleInputChange = async (e) => {
         setInputValue(e.target.value);
@@ -137,7 +138,7 @@ function Chat(props) {
           fetch_history();
         }
   
-        const ws = new WebSocket('ws://127.0.0.1:8080');
+        const ws = new WebSocket(websocket_host);
         ws.onopen = () => {
           console.log('Connected to WebSocket');
         };
