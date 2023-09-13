@@ -2,6 +2,8 @@
 
 The backend for this application is split into two parts: an HTTP REST server and a websocket server.
 
+![Architecture](../imgs/backend/translated-chat-backend-design.PNG)
+
 ## Deployment
 
 ### Docker
