@@ -15,13 +15,10 @@ class Translator:
         else:
             tokenizer = self.en_es_tokenizer
             language_model = self.en_es_language_model
+        
         inputs = tokenizer(message, return_tensors="pt", padding=True)
         output_sequences = language_model.generate(
             input_ids=inputs["input_ids"],
             max_new_tokens=200
         )
         return (tokenizer.decode(output_sequences[0], skip_special_tokens=True))
-
-if __name__ == '__main__':
-    translator = Translator()
-    translator.translate("spa", "no estoy seguro de que debo decir")

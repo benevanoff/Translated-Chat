@@ -4,8 +4,8 @@ from fastapi import FastAPI, Request, Depends, HTTPException, Response
 from pydantic import BaseModel
 from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
-from models.translator import Translator
-from models.chatbot import Chatbot
+from ai_models.translator import Translator
+from ai_models.chatbot import Chatbot
 from starlette.middleware.sessions import SessionMiddleware
 import pymysql
 

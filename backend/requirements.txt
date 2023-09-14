@@ -7,3 +7,4 @@ pymysql
 starlette-session
 cryptography
 websockets
+pytest

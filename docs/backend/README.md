@@ -10,6 +10,9 @@ The backend for this application is split into two parts: an HTTP REST server an
 
 They can both be packaged into a single docker container using the provided `Dockerfile`
 
+To build: `docker build . -t translated-chat-backend`
+To run: `docker run translated-chat-backend`
+
 ### Manual
 
 To manually run this backend you will first need to install the dependencies which can be done with this command: `python -m pip install -r requirements.txt`

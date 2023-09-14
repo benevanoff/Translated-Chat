@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ./
+    ports:
+      - 8000:8000
+      - 8080:8080
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=yourpassword
+      - DB_NAME=translated_chat
+
+  db:
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=yourpassword
+      - MYSQL_DATABASE=translated_chat
+    volumes:
+      - ./schema-dev.sql:/docker-entrypoint-initdb.d/schema.sql
